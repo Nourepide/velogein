@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url:
+    username:
+    password:
+  jpa:
+    generate-ddl: true
+  sql:
+    init:
+      mode: always
+      platform: postgres
+  main:
+    banner-mode: off
+
+logging:
+  level:
+    root: error
