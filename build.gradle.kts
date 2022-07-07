@@ -15,6 +15,12 @@ group = "net.intervallayers"
 version = "DEV"
 java.sourceCompatibility = JavaVersion.VERSION_18
 
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
+}
+
 repositories {
     mavenCentral()
 }

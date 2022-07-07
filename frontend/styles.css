@@ -1,0 +1,21 @@
+@import url('line-awesome/dist/line-awesome/css/line-awesome.min.css');
+
+.no-margin {
+    margin: 0;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.no-gap {
+    gap: 0;
+}
+
+.no-font-size {
+    font-size: revert;
+}
+
+.inline-size-max-content {
+    inline-size: max-content;
+}

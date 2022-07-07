@@ -14,4 +14,9 @@ spring:
 
 logging:
   level:
-    root: error
+    root: info
+
+vaadin:
+  launch-browser: false
+  whitelisted-packages: com.vaadin,org.vaadin,dev.hilla,com.example.application
+
