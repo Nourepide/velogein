@@ -1,5 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
+import com.vaadin.gradle.VaadinBuildFrontendTask
+import com.vaadin.gradle.VaadinPrepareFrontendTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -12,7 +14,7 @@ plugins {
 }
 
 group = "net.intervallayers"
-version = "DEV"
+version = "PROD"
 java.sourceCompatibility = JavaVersion.VERSION_18
 
 configurations {
@@ -59,4 +61,15 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+vaadin {
+    productionMode = true
+    generateBundle = true
+    optimizeBundle = true
+
+    with(tasks) {
+        withType<VaadinPrepareFrontendTask>()
+        withType<VaadinBuildFrontendTask>()
+    }
 }
