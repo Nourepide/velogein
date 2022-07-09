@@ -6,15 +6,16 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.button.ButtonVariant
 import com.vaadin.flow.component.icon.VaadinIcon
 import com.vaadin.flow.component.login.LoginForm
-import com.vaadin.flow.component.orderedlayout.FlexComponent
-import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.value.ValueChangeMode
 import com.vaadin.flow.shared.Registration
+import com.vaadin.flow.theme.lumo.LumoUtility.*
 import net.intervallayers.velogein.utils.AbstractEvent
+import net.intervallayers.velogein.utils.Gap
 import net.intervallayers.velogein.utils.addEnterKeyListener
 import net.intervallayers.velogein.utils.setRequiredNotEmpty
+import net.intervallayers.velogein.view.component.FlexVerticalLayout
 
 /**
  * Форма авторизации созданная с целью заменить стандартную LoginForm.
@@ -30,7 +31,7 @@ import net.intervallayers.velogein.utils.setRequiredNotEmpty
  * @author Nourepide@gmail.com
  */
 @Suppress("SpellCheckingInspection")
-class NewLoginForm : VerticalLayout() {
+class NewLoginForm : FlexVerticalLayout() {
 
     companion object {
         private const val USERNAME_FIELD_VALID_SIZE = 1
@@ -60,11 +61,9 @@ class NewLoginForm : VerticalLayout() {
      * Отлючает в нём отступы между элементами и размещает их вертикально по центру.
      */
     private fun configureContainer() {
-        className = "no-gap"
-        alignItems = FlexComponent.Alignment.CENTER
+        addClassNames(Gap.NONE, Padding.LARGE, AlignItems.CENTER)
         with(style) {
-            set("padding", "var(--lumo-space-l)")
-            set("max-width", "calc(var(--lumo-size-m) * 10)")
+            set("width", "calc(var(--lumo-size-m) * 10)")
         }
     }
 
@@ -79,6 +78,7 @@ class NewLoginForm : VerticalLayout() {
      */
     private fun configureUsernameField() {
         with(usernameField) {
+            addClassName(Width.FULL)
             addInputListener { loginButtonIsEnabledCheck() }
             addEnterKeyListener { loginButton.clickInClient() }
             setRequiredNotEmpty(USERNAME_FIELD_VALID_SIZE)
@@ -88,7 +88,7 @@ class NewLoginForm : VerticalLayout() {
             }
 
             valueChangeMode = ValueChangeMode.EAGER
-            width = "100%"
+
             focus()
         }
     }
@@ -103,6 +103,7 @@ class NewLoginForm : VerticalLayout() {
      */
     private fun configurePasswordField() {
         with(passwordField) {
+            addClassName(Width.FULL)
             addInputListener { loginButtonIsEnabledCheck() }
             addEnterKeyListener { loginButton.clickInClient() }
             setRequiredNotEmpty(PASSWORD_FIELD_VALID_SIZE)
@@ -112,7 +113,6 @@ class NewLoginForm : VerticalLayout() {
             }
 
             valueChangeMode = ValueChangeMode.EAGER
-            width = "100%"
         }
     }
 
@@ -124,11 +124,7 @@ class NewLoginForm : VerticalLayout() {
      */
     private fun configureLoginButton() {
         with(loginButton) {
-            with(style) {
-                set("width", "100%")
-                set("margin-top", "var(--lumo-space-l)")
-                set("margin-bottom", "var(--lumo-space-s)")
-            }
+            addClassNames(Width.FULL, Margin.Top.LARGE, Margin.Bottom.SMALL)
             addThemeVariants(ButtonVariant.LUMO_PRIMARY)
             addClickListener { fireEvent(LoginButtonClickEvent(this@NewLoginForm)) }
             loginButtonIsEnabledCheck()
@@ -143,9 +139,7 @@ class NewLoginForm : VerticalLayout() {
      */
     private fun configureRegistrationButton() {
         with(registrationButton) {
-            with(style) {
-                set("margin-top", "var(--lumo-space-s)")
-            }
+            addClassName(Margin.Top.SMALL)
             addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE)
             addClickListener { fireEvent(RegistrationButtonClickEvent(this@NewLoginForm)) }
         }

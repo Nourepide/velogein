@@ -1,23 +1,21 @@
 package net.intervallayers.velogein.view.auth
 
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.component.html.H1
-import com.vaadin.flow.component.html.H2
-import com.vaadin.flow.component.html.Hr
-import com.vaadin.flow.component.html.Image
-import com.vaadin.flow.component.orderedlayout.FlexComponent.*
-import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.server.VaadinServletRequest
-import com.vaadin.flow.theme.lumo.LumoUtility
+import com.vaadin.flow.server.VaadinSession
+import com.vaadin.flow.theme.lumo.LumoUtility.*
+import net.intervallayers.velogein.model.Account
 import net.intervallayers.velogein.service.AccountService
 import net.intervallayers.velogein.utils.createErrorNotification
 import net.intervallayers.velogein.utils.createSuccessNotification
+import net.intervallayers.velogein.view.auth.form.HeaderForm
 import net.intervallayers.velogein.view.auth.form.NewLoginForm
 import net.intervallayers.velogein.view.auth.form.RegistrationForm
+import net.intervallayers.velogein.view.component.FlexVerticalLayout
 import org.springframework.security.core.context.SecurityContextHolder
 import javax.servlet.ServletException
 
@@ -25,66 +23,31 @@ import javax.servlet.ServletException
  * Главная страница аунтефикации.
  * Появляется если пользователь не авторизован в системе.
  * Позволяет авторизоваться либо зарегистрироваться.
+ *
+ * @author Nourepide@gmail.com
  */
 @Route("auth")
 @PageTitle("Византийская литания")
-class AuthView(var accountService: AccountService) : VerticalLayout(), BeforeEnterObserver {
+class AuthView(var accountService: AccountService) : FlexVerticalLayout(), BeforeEnterObserver {
 
-    private val header = VerticalLayout()
+    private val headerForm = HeaderForm()
     private var newLoginForm = NewLoginForm()
     private val registrationForm = RegistrationForm()
 
     init {
         configureContainer()
-        configureHeader()
         configureNewLoginForm()
         configureRegistrationForm()
 
-        add(header, newLoginForm)
+        add(headerForm, newLoginForm)
     }
 
     /**
      * Конфигурация главного контейнера.
      */
     private fun configureContainer() {
-        addClassName("login-view")
+        addClassNames(AlignItems.CENTER, JustifyContent.CENTER)
         setSizeFull()
-        alignItems = Alignment.CENTER
-        justifyContentMode = JustifyContentMode.CENTER
-    }
-
-    /**
-     * Конфигурация шапки с логотипом.
-     */
-    private fun configureHeader() {
-        val logo = Image("./images/logo.svg", "logo").apply {
-            maxHeight = "50%"
-            maxWidth = "50%"
-        }
-
-        val h1 = H1("Византийская литания").apply {
-            className = "no-margin inline-size-max-content no-font-size"
-        }
-
-        val h2 = H2("Вход в казначейство").apply {
-            className = "no-margin inline-size-max-content"
-        }
-
-        val separator = Hr().apply {
-            with(style) {
-                set("height", "2px")
-                set("opacity", "25%")
-                set("background", "var(--lumo-header-text-color)")
-            }
-        }
-
-        with(header) {
-            add(logo, h1, separator, h2)
-
-            className = "no-padding"
-            alignItems = Alignment.CENTER
-            width = LumoUtility.Width.AUTO
-        }
     }
 
     /**
@@ -98,6 +61,11 @@ class AuthView(var accountService: AccountService) : VerticalLayout(), BeforeEnt
                         .getCurrent()
                         .login(getUsername(), getPassword())
 
+                    VaadinSession
+                        .getCurrent()
+                        .session
+                        .setAttribute(Account::class.java.name + ".username", getUsername())
+
                     UI
                         .getCurrent()
                         .navigate("/")
@@ -109,9 +77,6 @@ class AuthView(var accountService: AccountService) : VerticalLayout(), BeforeEnt
             }
             addListener(NewLoginForm.RegistrationButtonClickEvent::class.java) {
                 registrationForm.open()
-                /**
-                 * Подключение события авторизации на форме логина.
-                 */
             }
         }
     }
@@ -119,6 +84,7 @@ class AuthView(var accountService: AccountService) : VerticalLayout(), BeforeEnt
     /**
      * Подключение события регистрации на форме регистрации.
      */
+    @Suppress("UsePropertyAccessSyntax")
     private fun configureRegistrationForm() {
         with(registrationForm) {
             addListener(RegistrationForm.RegistrationButtonClickEvent::class.java) {
@@ -129,6 +95,11 @@ class AuthView(var accountService: AccountService) : VerticalLayout(), BeforeEnt
                         .getCurrent()
                         .login(account.username, account.passwordDecode)
                         .also { close() }
+
+                    VaadinSession
+                        .getCurrent()
+                        .getSession()
+                        .setAttribute(Account::class.java.name + ".username", account.username)
 
                     UI
                         .getCurrent()

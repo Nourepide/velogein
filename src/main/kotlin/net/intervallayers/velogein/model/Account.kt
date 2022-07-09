@@ -38,6 +38,9 @@ data class Account(
     @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
     var roles: MutableSet<Role>,
+
+    @Enumerated(EnumType.STRING)
+    var themeMode: ThemeMode,
 ) {
     companion object {
         fun createEmpty(): Account {
@@ -49,7 +52,8 @@ data class Account(
                 firstName = "",
                 lastName = "",
                 domicile = null,
-                roles = mutableSetOf(Role.USER)
+                roles = mutableSetOf(Role.USER),
+                themeMode = ThemeMode.BRIGHT
             )
         }
     }

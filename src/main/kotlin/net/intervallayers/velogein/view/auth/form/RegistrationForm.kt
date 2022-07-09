@@ -5,20 +5,21 @@ import com.vaadin.flow.component.ComponentEventListener
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.button.ButtonVariant
 import com.vaadin.flow.component.dialog.Dialog
-import com.vaadin.flow.component.orderedlayout.FlexComponent
-import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.BeanValidationBinder
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.data.value.ValueChangeMode
 import com.vaadin.flow.shared.Registration
+import com.vaadin.flow.theme.lumo.LumoUtility.*
 import net.intervallayers.velogein.model.Account
 import net.intervallayers.velogein.utils.AbstractEvent
+import net.intervallayers.velogein.utils.Gap
 import net.intervallayers.velogein.utils.addEnterKeyListener
 import net.intervallayers.velogein.utils.bind
 import net.intervallayers.velogein.utils.setRequiredNotEmpty
 import net.intervallayers.velogein.utils.setRequiredNotEmptyAndEquals
+import net.intervallayers.velogein.view.component.FlexVerticalLayout
 
 /**
  * Форма регистрации сделанная на основе диалога.
@@ -34,7 +35,7 @@ class RegistrationForm : Dialog() {
         private const val PASSWORD_FIELD_VALID_SIZE = 1
     }
 
-    private val content = VerticalLayout()
+    private val content = FlexVerticalLayout()
     private val usernameField = TextField("Имя пользователя")
     private val passwordField = PasswordField("Пароль")
     private val passwordRepeatField = PasswordField("Повторите пароль")
@@ -60,9 +61,7 @@ class RegistrationForm : Dialog() {
         with(cancelButton) {
             addThemeVariants(ButtonVariant.LUMO_TERTIARY)
             addClickListener { close() }
-            with(style) {
-                set("margin-right", "auto")
-            }
+            addClassName(Margin.Right.AUTO)
         }
 
         footer.add(cancelButton)
@@ -91,52 +90,43 @@ class RegistrationForm : Dialog() {
      */
     private fun configureContent() {
         with(usernameField) {
+            addClassNames(Width.FULL, Padding.Top.NONE)
             valueChangeMode = ValueChangeMode.EAGER
             addInputListener { registrationButtonIsEnabledCheck() }
             addEnterKeyListener { registrationButton.clickInClient() }
             setRequiredNotEmpty()
-            with(style) {
-                set("width", "100%")
-                set("padding-top", "0")
-            }
             focus()
         }
 
         with(passwordField) {
+            addClassName(Width.FULL)
             valueChangeMode = ValueChangeMode.EAGER
             addInputListener { registrationButtonIsEnabledCheck() }
             addEnterKeyListener { registrationButton.clickInClient() }
             setRequiredNotEmpty()
-            width = "100%"
         }
 
         with(passwordRepeatField) {
+            addClassName(Width.FULL)
             valueChangeMode = ValueChangeMode.EAGER
             addInputListener { registrationButtonIsEnabledCheck() }
             addEnterKeyListener { registrationButton.clickInClient() }
             setRequiredNotEmptyAndEquals(passwordField)
-            width = "100%"
         }
 
         with(firstNameField) {
+            addClassName(Width.FULL)
             addEnterKeyListener { registrationButton.clickInClient() }
-            width = "100%"
         }
 
         with(lastNameField) {
+            addClassNames(Width.FULL, Padding.Bottom.NONE)
             addEnterKeyListener { registrationButton.clickInClient() }
-            with(style) {
-                set("width", "100%")
-                set("padding-bottom", "0")
-            }
             setId("lastName")
         }
 
         with(content) {
-            className = "no-gap"
-
-            justifyContentMode = FlexComponent.JustifyContentMode.CENTER
-            alignItems = FlexComponent.Alignment.CENTER
+            addClassNames(Gap.NONE, AlignItems.CENTER, JustifyContent.CENTER)
 
             with(style) {
                 set("width", "calc(var(--lumo-size-s) * 10)")

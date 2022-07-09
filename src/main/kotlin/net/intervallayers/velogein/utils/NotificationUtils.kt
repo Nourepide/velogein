@@ -6,8 +6,8 @@ import com.vaadin.flow.component.icon.Icon
 import com.vaadin.flow.component.icon.VaadinIcon
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.notification.NotificationVariant
-import com.vaadin.flow.component.orderedlayout.FlexComponent
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout
+import com.vaadin.flow.theme.lumo.LumoUtility.*
 import java.time.Duration
 
 /**
@@ -28,8 +28,9 @@ fun createErrorNotification(text: String) {
  * Обёртка для быстрого создания уведомлений.
  */
 fun createNotification(variant: NotificationVariant, icon: Icon, text: String, duration: Duration) {
-    val horizontalLayout = HorizontalLayout(icon, Div(Text(text)).apply { width = "100%" })
-        .apply { alignItems = FlexComponent.Alignment.CENTER }
+    val horizontalLayout = HorizontalLayout(icon, Div(Text(text)).apply {
+        addClassNames(Width.FULL, AlignItems.CENTER, InlineSize.MAX_CONTENT)
+    })
 
     with(Notification()) {
         this.duration = duration.toMillis().toInt()
