@@ -12,19 +12,20 @@ import com.vaadin.flow.component.icon.Icon
 import com.vaadin.flow.component.icon.VaadinIcon
 import com.vaadin.flow.component.tabs.Tab
 import com.vaadin.flow.component.tabs.Tabs
-import com.vaadin.flow.router.BeforeEnterEvent
-import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.RouterLink
-import com.vaadin.flow.server.VaadinServletRequest
 import com.vaadin.flow.theme.lumo.LumoUtility.*
 import net.intervallayers.velogein.model.ThemeMode
+import net.intervallayers.velogein.security.SecurityService
 import net.intervallayers.velogein.service.AccountService
-import net.intervallayers.velogein.service.VaadinService
+import net.intervallayers.velogein.service.ClientService
+import net.intervallayers.velogein.service.SessionService
 import net.intervallayers.velogein.utils.Gap
 import net.intervallayers.velogein.utils.InlineSize
 import net.intervallayers.velogein.utils.UserSelect
-import net.intervallayers.velogein.view.account.AccountView
+import net.intervallayers.velogein.utils.UtilsWidth
+import net.intervallayers.velogein.utils.createErrorNotification
+import net.intervallayers.velogein.utils.createSuccessNotification
 import net.intervallayers.velogein.view.component.FlexHorizontalLayout
 import net.intervallayers.velogein.view.component.FlexVerticalLayout
 import net.intervallayers.velogein.view.component.Separator
@@ -38,7 +39,12 @@ import net.intervallayers.velogein.view.main.MainView
  *
  * @author Nourepide@gmail.com
  */
-class MainLayout(var accountService: AccountService, var vaadinService: VaadinService) : AppLayout(), BeforeEnterObserver {
+class MainLayout(
+    private val accountService: AccountService,
+    private val securityService: SecurityService,
+    private val sessionService: SessionService,
+    private val clientService: ClientService,
+) : AppLayout() {
 
     private val header = FlexHorizontalLayout()
     private val drawerToggle = DrawerToggle()
@@ -47,9 +53,13 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
     private val textContainer = FlexVerticalLayout()
     private val textTop = H1("Византийская литания")
     private val textBottom = H1()
+    private val addButton = Button(Icon(VaadinIcon.PLUS))
+    private val accountButton = Button(Icon(VaadinIcon.USER))
+    private val accountForm = AccountForm(accountService)
     private val themeModeChangeButton = Button()
-    private val logoutButton = Button("Выйти")
-    private val tabs = Tabs()
+    private val logoutButton = Button()
+    private val drawerTextContainer = FlexVerticalLayout()
+    private val drawerTabs = Tabs()
 
     private val routeTabs = mutableMapOf<Class<out Component>, Tab>()
 
@@ -76,7 +86,7 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
         }
 
         with(textContainer) {
-            addClassNames(Gap.NONE, Padding.SMALL, AlignItems.CENTER)
+            addClassNames(Gap.NONE, Padding.SMALL, AlignItems.CENTER, "mobile-hide")
             add(textTop, Separator(), textBottom)
         }
 
@@ -89,24 +99,48 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
             add(image, textContainer)
         }
 
-        with(logoutButton) {
+        with(addButton) {
+            addThemeVariants(ButtonVariant.LUMO_ICON)
+            element.setAttribute("aria-label", "Add item")
+
             addClickListener {
-                VaadinServletRequest.getCurrent().logout()
+                createSuccessNotification("Успешное уведомление.")
+                createErrorNotification("Полностью не успешное и очень не удачное уведомление с длинным текстом.")
+            }
+
+            hideAddButton()
+        }
+
+        with(accountButton) {
+            addThemeVariants(ButtonVariant.LUMO_ICON)
+            element.setAttribute("aria-label", "Add item")
+
+            addClickListener {
+                accountForm.open()
             }
         }
 
         with(themeModeChangeButton) {
             addThemeVariants(ButtonVariant.LUMO_ICON)
-            element.setAttribute("aria-label", "Add item")
+            element.setAttribute("aria-label", "Change theme mode")
 
             addClickListener {
-                toggleAccountThemeMode()
+                toggleThemeMode()
+            }
+        }
+
+        with(logoutButton) {
+            icon = Icon(VaadinIcon.ARROW_RIGHT)
+            isIconAfterText = true
+
+            addClickListener {
+                securityService.logout()
             }
         }
 
         with(header) {
             addClassNames(Width.FULL, Padding.Vertical.NONE, Padding.Horizontal.MEDIUM, AlignItems.CENTER)
-            add(drawerToggle, logoContainer, themeModeChangeButton, logoutButton)
+            add(drawerToggle, logoContainer, addButton, accountButton, themeModeChangeButton, logoutButton)
         }
 
         addToNavbar(true, header)
@@ -127,17 +161,29 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
             this[DomicileView::class.java] = createTab(
                 VaadinIcon.USERS, "Резиденты", DomicileView::class.java
             )
-            this[AccountView::class.java] = createTab(
-                VaadinIcon.USER, "Аккаунт", AccountView::class.java
-            )
         }
 
-        with(tabs) {
+        with(drawerTextContainer) {
+            val text = H1("Византийская литания")
+            val separator = Separator()
+
+            addClassName("mobile-show")
+
+            addClassNames(AlignItems.CENTER, UtilsWidth.FIT_CONTENT, Margin.Left.AUTO, Margin.Right.AUTO)
+
+            with(text) {
+                addClassNames(FontSize.LARGE, Margin.NONE, InlineSize.MAX_CONTENT)
+            }
+
+            add(text, separator)
+        }
+
+        with(drawerTabs) {
             orientation = Tabs.Orientation.VERTICAL
             routeTabs.values.forEach { add(it) }
         }
 
-        addToDrawer(tabs)
+        addToDrawer(drawerTextContainer, drawerTabs)
     }
 
     /**
@@ -167,8 +213,17 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
      * а так-же проверят что в боковой панели выбрана корректная вкладка.
      */
     override fun afterNavigation() {
+        initializeThemeMode()
+
         textBottom.text = getCurrentPageTitle()
-        tabs.selectedTab = getCurrentViewTab()
+        drawerTabs.selectedTab = getCurrentViewTab()
+
+        when (content::class) {
+            DomicileView::class -> {
+                showAddButton()
+            }
+            else -> hideAddButton()
+        }
     }
 
     /**
@@ -190,45 +245,31 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
     }
 
     /**
-     * Ранняя инициализация до полной загрузки страницы.
-     */
-    override fun beforeEnter(event: BeforeEnterEvent?) {
-        initializeThemeMode()
-    }
-
-    /**
      * Инициализирует режим оформления после загрузки страницы в первый раз.
      * Подхватывает значение из сессии. Если значение не было инициализировано,
      * то корректирует значение сессии.
      */
     private fun initializeThemeMode() {
-        if (vaadinService.getSessionThemeMode() == null) {
-            val username = vaadinService.getSessionAccountUsername()
+        var themeMode = sessionService.getSessionThemeMode()
 
-            if (username == null) {
-                throw RuntimeException("Имя пользователя в сессии не найдено или неверно.")
-            } else {
-                setClientThemeMode(accountService.getThemeModeByUsername(username))
-            }
-        } else {
-            setClientThemeMode(vaadinService.getSessionThemeMode()!!)
+        if (themeMode == null) {
+            themeMode = accountService.getThemeMode()
         }
-    }
 
-    /**
-     * Включает режим оформления без изменения в аккаунте.
-     */
-    fun setClientThemeMode(themeMode: ThemeMode) {
-        vaadinService.setSessionThemeMode(themeMode) {
-            when (themeMode) {
-                ThemeMode.BRIGHT -> {
-                    setImageBright()
-                    setThemeModeChangeButtonBright()
-                }
-                ThemeMode.DARK -> {
-                    setImageDark()
-                    setThemeModeChangeButtonDark()
-                }
+        when (themeMode) {
+            ThemeMode.BRIGHT -> {
+                sessionService.setSessionThemeModeBright()
+                clientService.setClientThemeModeBright()
+
+                setImageBright()
+                setThemeModeChangeButtonBright()
+            }
+            ThemeMode.DARK -> {
+                sessionService.setSessionThemeModeDark()
+                clientService.setClientThemeModeDark()
+
+                setImageDark()
+                setThemeModeChangeButtonDark()
             }
         }
     }
@@ -236,41 +277,24 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
     /**
      * Переключает на альтернативный стиль оформления аккаунта.
      */
-    fun toggleAccountThemeMode() {
-        when (vaadinService.getSessionThemeMode()!!) {
-            ThemeMode.BRIGHT -> setAccountThemeModeDark()
-            ThemeMode.DARK -> setAccountThemeModeBright()
-        }
-    }
+    fun toggleThemeMode() {
+        when (sessionService.getSessionThemeMode()!!) {
+            ThemeMode.BRIGHT -> {
+                accountService.setThemeModeDark()
+                sessionService.setSessionThemeModeDark()
+                clientService.setClientThemeModeDark()
 
-    /**
-     * Включает светлый режим аккаунта.
-     */
-    fun setAccountThemeModeBright() {
-        val username = vaadinService.getSessionAccountUsername()
-        val currentThemeMode = vaadinService.getSessionThemeMode()
-
-        if (currentThemeMode != ThemeMode.BRIGHT && username is String) {
-            accountService.setThemeModeByUsername(username, ThemeMode.BRIGHT)
-            vaadinService.setSessionThemeMode(ThemeMode.BRIGHT) {
-                setImageBright()
-                setThemeModeChangeButtonBright()
-            }
-        }
-    }
-
-    /**
-     * Включает тёмный режим аккаунта.
-     */
-    fun setAccountThemeModeDark() {
-        val username = vaadinService.getSessionAccountUsername()
-        val currentThemeMode = vaadinService.getSessionThemeMode()
-
-        if (currentThemeMode != ThemeMode.DARK && username is String) {
-            accountService.setThemeModeByUsername(username, ThemeMode.DARK)
-            vaadinService.setSessionThemeMode(ThemeMode.DARK) {
                 setImageDark()
                 setThemeModeChangeButtonDark()
+            }
+
+            ThemeMode.DARK -> {
+                accountService.setThemeModeBright()
+                sessionService.setSessionThemeModeBright()
+                clientService.setClientThemeModeBright()
+
+                setImageBright()
+                setThemeModeChangeButtonBright()
             }
         }
     }
@@ -301,6 +325,18 @@ class MainLayout(var accountService: AccountService, var vaadinService: VaadinSe
      */
     fun setThemeModeChangeButtonDark() {
         themeModeChangeButton.icon = Icon(VaadinIcon.SUN_O)
+    }
+
+    fun showAddButton() {
+        with(addButton) {
+            removeClassName(Display.HIDDEN)
+        }
+    }
+
+    fun hideAddButton() {
+        with(addButton) {
+            addClassName(Display.HIDDEN)
+        }
     }
 
 }

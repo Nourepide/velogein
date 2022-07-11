@@ -58,12 +58,45 @@ fun PasswordField.setRequiredNotEmptyAndEquals(passwordField: PasswordField, min
 
         isInvalid = lengthNotZero || passwordNotMatch
     }
+    addValueChangeListener {
+        if (isEmpty) {
+            isInvalid = false
+        }
+    }
     passwordField.addValueChangeListener {
         if (!(value.trim().length < minimumLength && !isInvalid)) {
             isInvalid = value != passwordField.value
         }
     }
     isRequired = true
+}
+
+/**
+ * Устанавливает текстовое поле обязательным для совпадения с другим текстовым полем.
+ */
+fun PasswordField.setRequiredEquals(passwordField: PasswordField) {
+    addFocusListener {
+        isInvalid = false
+    }
+    addBlurListener {
+        val passwordNotMatch = value != passwordField.value
+
+        isInvalid = passwordNotMatch
+    }
+    addValueChangeListener {
+        if (isEmpty) {
+            isInvalid = false
+        }
+    }
+    passwordField.addValueChangeListener {
+        if (value.isNotEmpty()) {
+            isInvalid = value != passwordField.value
+        }
+
+        if (value.isEmpty() && passwordField.value.isEmpty()) {
+            isInvalid = false
+        }
+    }
 }
 
 /**

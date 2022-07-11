@@ -1,21 +1,21 @@
 package net.intervallayers.velogein.view.auth
 
-import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
-import com.vaadin.flow.server.VaadinServletRequest
-import com.vaadin.flow.server.VaadinSession
 import com.vaadin.flow.theme.lumo.LumoUtility.*
-import net.intervallayers.velogein.model.Account
+import net.intervallayers.velogein.security.SecurityService
 import net.intervallayers.velogein.service.AccountService
+import net.intervallayers.velogein.service.ClientService
+import net.intervallayers.velogein.service.SessionService
 import net.intervallayers.velogein.utils.createErrorNotification
 import net.intervallayers.velogein.utils.createSuccessNotification
 import net.intervallayers.velogein.view.auth.form.HeaderForm
 import net.intervallayers.velogein.view.auth.form.NewLoginForm
 import net.intervallayers.velogein.view.auth.form.RegistrationForm
 import net.intervallayers.velogein.view.component.FlexVerticalLayout
+import net.intervallayers.velogein.view.main.MainView
 import org.springframework.security.core.context.SecurityContextHolder
 import javax.servlet.ServletException
 
@@ -28,7 +28,12 @@ import javax.servlet.ServletException
  */
 @Route("auth")
 @PageTitle("Византийская литания")
-class AuthView(var accountService: AccountService) : FlexVerticalLayout(), BeforeEnterObserver {
+class AuthView(
+    private val accountService: AccountService,
+    private val securityService: SecurityService,
+    private val sessionService: SessionService,
+    private val clientService: ClientService,
+) : FlexVerticalLayout(), BeforeEnterObserver {
 
     private val headerForm = HeaderForm()
     private var newLoginForm = NewLoginForm()
@@ -57,20 +62,23 @@ class AuthView(var accountService: AccountService) : FlexVerticalLayout(), Befor
         with(newLoginForm) {
             addListener(NewLoginForm.LoginButtonClickEvent::class.java) {
                 try {
-                    VaadinServletRequest
-                        .getCurrent()
-                        .login(getUsername(), getPassword())
+                    if (!accountService.isAccountExistByUsername(getUsername())) {
+                        createErrorNotification("Пользователя с таким именем не существует.")
+                    } else {
+                        with(securityService) {
+                            login(getUsername(), getPassword())
+                        }
 
-                    VaadinSession
-                        .getCurrent()
-                        .session
-                        .setAttribute(Account::class.java.name + ".username", getUsername())
+                        with(sessionService) {
+                            setSessionAccountUsername(getUsername())
+                        }
 
-                    UI
-                        .getCurrent()
-                        .navigate("/")
+                        with(clientService) {
+                            navigateTo(MainView::class.java)
+                        }
 
-                    createSuccessNotification("Успешная авторизация.")
+                        createSuccessNotification("Успешная авторизация.")
+                    }
                 } catch (e: ServletException) {
                     createErrorNotification("Ошибка авторизации.")
                 }
@@ -84,30 +92,33 @@ class AuthView(var accountService: AccountService) : FlexVerticalLayout(), Befor
     /**
      * Подключение события регистрации на форме регистрации.
      */
-    @Suppress("UsePropertyAccessSyntax")
     private fun configureRegistrationForm() {
         with(registrationForm) {
             addListener(RegistrationForm.RegistrationButtonClickEvent::class.java) {
                 try {
-                    accountService.save(account)
+                    with(accountService) {
+                        createAccount(account)
+                    }
 
-                    VaadinServletRequest
-                        .getCurrent()
-                        .login(account.username, account.passwordDecode)
-                        .also { close() }
+                    with(securityService) {
+                        login(account.username, account.passwordDecode!!)
+                    }
 
-                    VaadinSession
-                        .getCurrent()
-                        .getSession()
-                        .setAttribute(Account::class.java.name + ".username", account.username)
+                    close()
 
-                    UI
-                        .getCurrent()
-                        .navigate("/")
+                    with(sessionService) {
+                        setSessionAccountUsername(account.username)
+                    }
+
+                    with(clientService) {
+                        navigateTo(MainView::class.java)
+                    }
 
                     createSuccessNotification("Успешная регистрация.")
-                } catch (e: AccountService.AccountSaveAlreadyExistExceptions) {
+                } catch (e: AccountService.AccountCreateAlreadyExistExceptions) {
                     createErrorNotification("Пользователь с таким именем уже существует.")
+                } catch (e: ServletException) {
+                    createErrorNotification("Ошибка авторизации после регистрации.")
                 }
             }
         }

@@ -20,6 +20,7 @@ import net.intervallayers.velogein.utils.bind
 import net.intervallayers.velogein.utils.setRequiredNotEmpty
 import net.intervallayers.velogein.utils.setRequiredNotEmptyAndEquals
 import net.intervallayers.velogein.view.component.FlexVerticalLayout
+import net.intervallayers.velogein.view.layout.AccountForm
 
 /**
  * Форма регистрации сделанная на основе диалога.
@@ -52,35 +53,6 @@ class RegistrationForm : Dialog() {
         configureCancelButton()
         configureRegistrationButton()
         configureBinder()
-    }
-
-    /**
-     * Конфигурация кнопки закрытия.
-     */
-    private fun configureCancelButton() {
-        with(cancelButton) {
-            addThemeVariants(ButtonVariant.LUMO_TERTIARY)
-            addClickListener { close() }
-            addClassName(Margin.Right.AUTO)
-        }
-
-        footer.add(cancelButton)
-    }
-
-    /**
-     * Конфигурация кнопки регистрации.
-     */
-    private fun configureRegistrationButton() {
-        with(registrationButton) {
-            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
-            addClickListener {
-                binder.writeBean(account)
-                fireEvent(RegistrationButtonClickEvent(this@RegistrationForm))
-            }
-        }
-        registrationButtonIsEnabledCheck()
-
-        footer.add(registrationButton)
     }
 
     /**
@@ -145,16 +117,57 @@ class RegistrationForm : Dialog() {
     }
 
     /**
+     * Конфигурация кнопки закрытия.
+     */
+    private fun configureCancelButton() {
+        with(cancelButton) {
+            addThemeVariants(ButtonVariant.LUMO_TERTIARY)
+            addClickListener { close() }
+            addClassName(Margin.Right.AUTO)
+        }
+
+        with(footer) {
+            add(cancelButton)
+        }
+    }
+
+    /**
+     * Конфигурация кнопки регистрации.
+     */
+    private fun configureRegistrationButton() {
+        with(registrationButton) {
+            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+            addClickListener {
+                binder.writeBean(account)
+                fireEvent(RegistrationButtonClickEvent(this@RegistrationForm))
+            }
+        }
+
+        registrationButtonIsEnabledCheck()
+
+        with(footer) {
+            add(registrationButton)
+        }
+    }
+
+    /**
      * Конфигурация binder.
      * Привязывает поля из основного контентного блока к переменной Account.
      *
+     * Единственно красивым способом избавится от дубликата кода является
+     * создания отдельного класса с проверкой и условием, к сожалению для
+     * этого класса и того где наблюдается второй дубликат наследование
+     * от классов более невозможно.
+     *
      * @see binder
      * @see account
+     * @see AccountForm.configureBinder
      */
-    fun configureBinder() {
+    @Suppress("DuplicatedCode")
+    private fun configureBinder() {
         with(binder) {
             bind(usernameField, Account::username::get, Account::username::set)
-            bind(passwordField, Account::password::get, Account::password::set)
+            bind(passwordField, Account::passwordDecode::get, Account::passwordDecode::set)
             bind(firstNameField, Account::firstName::get, Account::firstName::set)
             bind(lastNameField, Account::lastName::get, Account::lastName::set)
         }
@@ -180,7 +193,10 @@ class RegistrationForm : Dialog() {
 
         val passwordFieldMatch = getPassword() == getPasswordRepeat()
 
-        registrationButton.isEnabled = usernameFieldIsValid && passwordFieldIsValid && passwordFieldRepeatIsValid && passwordFieldMatch
+        registrationButton.isEnabled = usernameFieldIsValid
+                && passwordFieldIsValid
+                && passwordFieldRepeatIsValid
+                && passwordFieldMatch
     }
 
     /**

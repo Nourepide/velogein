@@ -32,11 +32,11 @@ class HeaderForm : FlexVerticalLayout() {
         }
 
         val h1 = H1("Византийская литания").apply {
-            addClassNames(Margin.NONE, InlineSize.MAX_CONTENT, "no-font-size")
+            addClassNames(Margin.NONE, InlineSize.MAX_CONTENT, FontSize.XXLARGE)
         }
 
         val h2 = H2("Вход в казначейство").apply {
-            addClassNames(Margin.NONE, InlineSize.MAX_CONTENT)
+            addClassNames(Margin.NONE, InlineSize.MAX_CONTENT, FontSize.LARGE)
         }
 
         val limiter = VerticalLayout(h1, Separator(), h2).apply {

@@ -28,12 +28,19 @@ fun createErrorNotification(text: String) {
  * Обёртка для быстрого создания уведомлений.
  */
 fun createNotification(variant: NotificationVariant, icon: Icon, text: String, duration: Duration) {
+
+    with(icon) {
+        addClassName(Margin.AUTO)
+    }
+
     val horizontalLayout = HorizontalLayout(icon, Div(Text(text)).apply {
-        addClassNames(Width.FULL, AlignItems.CENTER, InlineSize.MAX_CONTENT)
+        addClassNames(Width.FULL, AlignItems.CENTER)
     })
 
     with(Notification()) {
         this.duration = duration.toMillis().toInt()
+
+        addClassName(Stylesheet.NOTIFICATION)
 
         add(horizontalLayout)
         addThemeVariants(variant)

@@ -59,10 +59,11 @@ data class Account(
     }
 
     fun bCryptEncode(): Account {
-        BCryptPasswordEncoder(12)
-            .encode(password)
-            .also { passwordDecode = password }
-            .also { password = it }
+        if (passwordDecode != null && passwordDecode!!.isNotEmpty()) {
+            BCryptPasswordEncoder(12)
+                .encode(passwordDecode)
+                .also { password = it }
+        }
 
         return this
     }
@@ -75,4 +76,7 @@ data class Account(
 
     @Transient
     var passwordDecode: String? = null
+
+    @Transient
+    var isUsernameChanged: Boolean = false
 }
