@@ -14,8 +14,10 @@ import net.intervallayers.velogein.utils.createSuccessNotification
 import net.intervallayers.velogein.view.auth.form.HeaderForm
 import net.intervallayers.velogein.view.auth.form.NewLoginForm
 import net.intervallayers.velogein.view.auth.form.RegistrationForm
+import net.intervallayers.velogein.view.component.FlexDialog
 import net.intervallayers.velogein.view.component.FlexVerticalLayout
 import net.intervallayers.velogein.view.main.MainView
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.context.SecurityContextHolder
 import javax.servlet.ServletException
 
@@ -80,7 +82,11 @@ class AuthView(
                         createSuccessNotification("Успешная авторизация.")
                     }
                 } catch (e: ServletException) {
-                    createErrorNotification("Ошибка авторизации.")
+                    if (e.cause is BadCredentialsException) {
+                        createErrorNotification("Неправильный пароль.")
+                    } else {
+                        createErrorNotification("Ошибка авторизации.")
+                    }
                 }
             }
             addListener(NewLoginForm.RegistrationButtonClickEvent::class.java) {
@@ -94,7 +100,7 @@ class AuthView(
      */
     private fun configureRegistrationForm() {
         with(registrationForm) {
-            addListener(RegistrationForm.RegistrationButtonClickEvent::class.java) {
+            addListener(FlexDialog.ActionButtonClickEvent::class.java) {
                 try {
                     with(accountService) {
                         createAccount(account)

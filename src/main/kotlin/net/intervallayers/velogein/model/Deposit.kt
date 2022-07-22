@@ -8,6 +8,8 @@ import javax.persistence.OneToMany
 
 /**
  * Депозит для хранения данных валюты и резидентов.
+ *
+ * @author Nourepide@gmail.com
  */
 @Entity
 data class Deposit(

@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("org.springframework.boot") version "2.7.1"
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
-    id("com.vaadin") version "23.1.2"
+    id("com.vaadin") version "23.1.3"
     kotlin("jvm") version "1.7.0"
     kotlin("plugin.spring") version "1.7.0"
     kotlin("plugin.jpa") version "1.7.0"
@@ -27,7 +27,7 @@ repositories {
     mavenCentral()
 }
 
-extra["vaadinVersion"] = "23.1.2"
+extra["vaadinVersion"] = "23.1.3"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")

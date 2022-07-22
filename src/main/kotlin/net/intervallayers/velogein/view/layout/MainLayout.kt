@@ -14,11 +14,14 @@ import com.vaadin.flow.component.tabs.Tab
 import com.vaadin.flow.component.tabs.Tabs
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.RouterLink
+import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.theme.lumo.LumoUtility.*
+import net.intervallayers.velogein.model.Domicile
 import net.intervallayers.velogein.model.ThemeMode
 import net.intervallayers.velogein.security.SecurityService
 import net.intervallayers.velogein.service.AccountService
 import net.intervallayers.velogein.service.ClientService
+import net.intervallayers.velogein.service.DomicileService
 import net.intervallayers.velogein.service.SessionService
 import net.intervallayers.velogein.utils.Gap
 import net.intervallayers.velogein.utils.InlineSize
@@ -26,6 +29,7 @@ import net.intervallayers.velogein.utils.UserSelect
 import net.intervallayers.velogein.utils.UtilsWidth
 import net.intervallayers.velogein.utils.createErrorNotification
 import net.intervallayers.velogein.utils.createSuccessNotification
+import net.intervallayers.velogein.view.component.FlexDialog
 import net.intervallayers.velogein.view.component.FlexHorizontalLayout
 import net.intervallayers.velogein.view.component.FlexVerticalLayout
 import net.intervallayers.velogein.view.component.Separator
@@ -41,6 +45,7 @@ import net.intervallayers.velogein.view.main.MainView
  */
 class MainLayout(
     private val accountService: AccountService,
+    private val domicileService: DomicileService,
     private val securityService: SecurityService,
     private val sessionService: SessionService,
     private val clientService: ClientService,
@@ -55,7 +60,7 @@ class MainLayout(
     private val textBottom = H1()
     private val addButton = Button(Icon(VaadinIcon.PLUS))
     private val accountButton = Button(Icon(VaadinIcon.USER))
-    private val accountForm = AccountForm(accountService)
+    private val accountForm = AccountForm(accountService, domicileService, sessionService)
     private val themeModeChangeButton = Button()
     private val logoutButton = Button()
     private val drawerTextContainer = FlexVerticalLayout()
@@ -63,8 +68,15 @@ class MainLayout(
 
     private val routeTabs = mutableMapOf<Class<out Component>, Tab>()
 
+    /**
+     * Текущее действие при нажатии на кнопку "добавить".
+     * Вынесено отдельно в оглавление класса из функции afterNavigation.
+     */
+    private var addButtonClickListener: Registration? = null
+
     init {
         configureHeader()
+        configureAccountForm()
         configureDrawer()
     }
 
@@ -103,11 +115,6 @@ class MainLayout(
             addThemeVariants(ButtonVariant.LUMO_ICON)
             element.setAttribute("aria-label", "Add item")
 
-            addClickListener {
-                createSuccessNotification("Успешное уведомление.")
-                createErrorNotification("Полностью не успешное и очень не удачное уведомление с длинным текстом.")
-            }
-
             hideAddButton()
         }
 
@@ -144,6 +151,35 @@ class MainLayout(
         }
 
         addToNavbar(true, header)
+    }
+
+    private fun configureAccountForm() {
+        with(accountForm) {
+            addListener(FlexDialog.ActionButtonClickEvent::class.java) {
+                if (getUsernameIsChanged() && accountService.isAccountExistByUsername(getUsername())) {
+                    createErrorNotification("Аккаунт с таким именем пользователя уже существует.")
+                } else if (getDomicileCreateButtonIsPressed() && domicileService.domicileIsExist(getFirstname(), getLastname())) {
+                    createErrorNotification("Резидент с таким именем и фамилией уже существует.")
+                } else {
+                    with(accountService) {
+                        updateAccount(account.bCryptEncode())
+                    }
+
+                    with(sessionService) {
+                        setSessionAccountUsername(account.username)
+                    }
+
+                    createSuccessNotification("Аккаунт успешно обновлён.")
+                    close()
+
+                    if (content is DomicileView) {
+                        with(content as DomicileView) {
+                            updateGrid()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -210,8 +246,10 @@ class MainLayout(
 
     /**
      * После каждого перехода корректирует надпись в логотипе,
-     * а так-же проверят что в боковой панели выбрана корректная вкладка.
+     * проверят что в боковой панели выбрана корректная вкладка
+     * и привязывает к кнопке "добавить" активное действие.
      */
+    @Suppress("UNCHECKED_CAST")
     override fun afterNavigation() {
         initializeThemeMode()
 
@@ -221,8 +259,23 @@ class MainLayout(
         when (content::class) {
             DomicileView::class -> {
                 showAddButton()
+
+                with(addButton) {
+                    addButtonClickListener = addClickListener {
+                        with(content as DomicileView) {
+                            domicileForm.domicile = Domicile.createEmpty()
+                            domicileForm.open()
+                        }
+                    }
+                }
             }
-            else -> hideAddButton()
+            else -> {
+                if (addButtonClickListener != null) {
+                    addButtonClickListener!!.remove()
+                }
+
+                hideAddButton()
+            }
         }
     }
 

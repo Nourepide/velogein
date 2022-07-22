@@ -1,58 +1,49 @@
 package net.intervallayers.velogein.view.auth.form
 
-import com.vaadin.flow.component.ComponentEvent
-import com.vaadin.flow.component.ComponentEventListener
-import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.button.ButtonVariant
-import com.vaadin.flow.component.dialog.Dialog
-import com.vaadin.flow.component.textfield.PasswordField
-import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.BeanValidationBinder
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.data.value.ValueChangeMode
-import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.theme.lumo.LumoUtility.*
 import net.intervallayers.velogein.model.Account
-import net.intervallayers.velogein.utils.AbstractEvent
-import net.intervallayers.velogein.utils.Gap
 import net.intervallayers.velogein.utils.addEnterKeyListener
 import net.intervallayers.velogein.utils.bind
 import net.intervallayers.velogein.utils.setRequiredNotEmpty
 import net.intervallayers.velogein.utils.setRequiredNotEmptyAndEquals
-import net.intervallayers.velogein.view.component.FlexVerticalLayout
+import net.intervallayers.velogein.view.component.FlexDialog
+import net.intervallayers.velogein.view.component.FlexPasswordField
+import net.intervallayers.velogein.view.component.FlexTextField
 import net.intervallayers.velogein.view.layout.AccountForm
 
 /**
  * Форма регистрации сделанная на основе диалога.
- * Необходимо скрывать в случае перехода на другую страницу при открытой форме.
  * Все поля имеют проверки на количество символов, а так-же на совпадение полей пароля.
  *
  * @author Nourepide@gmail.com
  */
-class RegistrationForm : Dialog() {
+class RegistrationForm : FlexDialog() {
 
     companion object {
         private const val USERNAME_FIELD_VALID_SIZE = 1
         private const val PASSWORD_FIELD_VALID_SIZE = 1
     }
 
-    private val content = FlexVerticalLayout()
-    private val usernameField = TextField("Имя пользователя")
-    private val passwordField = PasswordField("Пароль")
-    private val passwordRepeatField = PasswordField("Повторите пароль")
-    private val firstNameField = TextField("Имя")
-    private val lastNameField = TextField("Фамилия")
-    private val cancelButton = Button("Закрыть")
-    private val registrationButton = Button("Зарегистрироваться")
+    private val usernameField = FlexTextField("Имя пользователя")
+    private val passwordField = FlexPasswordField("Пароль")
+    private val passwordRepeatField = FlexPasswordField("Повторите пароль")
+    private val firstNameField = FlexTextField("Имя")
+    private val lastNameField = FlexTextField("Фамилия")
 
     private val binder: Binder<Account> = BeanValidationBinder(Account::class.java)
     val account: Account by bind(Account.createEmpty()) { binder.readBean(it) }
 
     init {
         configureContent()
-        configureCancelButton()
-        configureRegistrationButton()
+        configureActionButton()
         configureBinder()
+
+        addOpenedChangeListener {
+            actionButtonIsEnabledCheck()
+        }
     }
 
     /**
@@ -62,91 +53,55 @@ class RegistrationForm : Dialog() {
      */
     private fun configureContent() {
         with(usernameField) {
-            addClassNames(Width.FULL, Padding.Top.NONE)
+            addClassName(Padding.Top.NONE)
             valueChangeMode = ValueChangeMode.EAGER
-            addInputListener { registrationButtonIsEnabledCheck() }
-            addEnterKeyListener { registrationButton.clickInClient() }
+            addInputListener { actionButtonIsEnabledCheck() }
+            addEnterKeyListener { actionButtonClickInClient() }
             setRequiredNotEmpty()
             focus()
         }
 
         with(passwordField) {
-            addClassName(Width.FULL)
             valueChangeMode = ValueChangeMode.EAGER
-            addInputListener { registrationButtonIsEnabledCheck() }
-            addEnterKeyListener { registrationButton.clickInClient() }
+            addInputListener { actionButtonIsEnabledCheck() }
+            addEnterKeyListener { actionButtonClickInClient() }
             setRequiredNotEmpty()
         }
 
         with(passwordRepeatField) {
-            addClassName(Width.FULL)
             valueChangeMode = ValueChangeMode.EAGER
-            addInputListener { registrationButtonIsEnabledCheck() }
-            addEnterKeyListener { registrationButton.clickInClient() }
+            addInputListener { actionButtonIsEnabledCheck() }
+            addEnterKeyListener { actionButtonClickInClient() }
             setRequiredNotEmptyAndEquals(passwordField)
         }
 
         with(firstNameField) {
-            addClassName(Width.FULL)
-            addEnterKeyListener { registrationButton.clickInClient() }
+            addEnterKeyListener { actionButtonClickInClient() }
         }
 
         with(lastNameField) {
             addClassNames(Width.FULL, Padding.Bottom.NONE)
-            addEnterKeyListener { registrationButton.clickInClient() }
+            addEnterKeyListener { actionButtonClickInClient() }
             setId("lastName")
         }
 
-        with(content) {
-            addClassNames(Gap.NONE, AlignItems.CENTER, JustifyContent.CENTER)
-
-            with(style) {
-                set("width", "calc(var(--lumo-size-s) * 10)")
-            }
-
-            add(
-                usernameField,
-                passwordField,
-                passwordRepeatField,
-                firstNameField,
-                lastNameField
-            )
-        }
-
-        add(content)
-    }
-
-    /**
-     * Конфигурация кнопки закрытия.
-     */
-    private fun configureCancelButton() {
-        with(cancelButton) {
-            addThemeVariants(ButtonVariant.LUMO_TERTIARY)
-            addClickListener { close() }
-            addClassName(Margin.Right.AUTO)
-        }
-
-        with(footer) {
-            add(cancelButton)
-        }
+        addToContent(
+            usernameField,
+            passwordField,
+            passwordRepeatField,
+            firstNameField,
+            lastNameField
+        )
     }
 
     /**
      * Конфигурация кнопки регистрации.
      */
-    private fun configureRegistrationButton() {
-        with(registrationButton) {
-            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
-            addClickListener {
-                binder.writeBean(account)
-                fireEvent(RegistrationButtonClickEvent(this@RegistrationForm))
-            }
-        }
+    private fun configureActionButton() {
+        actionButtonSetText("Зарегистрироваться")
 
-        registrationButtonIsEnabledCheck()
-
-        with(footer) {
-            add(registrationButton)
+        beforeActionButtonClickEvent {
+            binder.writeBean(account)
         }
     }
 
@@ -174,11 +129,11 @@ class RegistrationForm : Dialog() {
     }
 
     /**
-     * Проверка на доступность кнопки регистрации.
+     * Проверка на доступность кнопки действия.
      * Проверят что все обязательные поля заполнены,
      * а так-же что поля паролей совпадают.
      */
-    private fun registrationButtonIsEnabledCheck() {
+    private fun actionButtonIsEnabledCheck() {
         val usernameFieldIsValid = getUsername()
             .trim()
             .length >= USERNAME_FIELD_VALID_SIZE
@@ -193,10 +148,12 @@ class RegistrationForm : Dialog() {
 
         val passwordFieldMatch = getPassword() == getPasswordRepeat()
 
-        registrationButton.isEnabled = usernameFieldIsValid
-                && passwordFieldIsValid
-                && passwordFieldRepeatIsValid
-                && passwordFieldMatch
+        actionButtonSetIsEnabled(
+            usernameFieldIsValid
+                    && passwordFieldIsValid
+                    && passwordFieldRepeatIsValid
+                    && passwordFieldMatch
+        )
     }
 
     /**
@@ -222,20 +179,5 @@ class RegistrationForm : Dialog() {
     fun getPasswordRepeat(): String {
         return passwordRepeatField.value
     }
-
-    /**
-     * Реализация прослушивания событий через стандартный маршрутизатор.
-     */
-    public override fun <T : ComponentEvent<*>> addListener(eventType: Class<T>, listener: ComponentEventListener<T>): Registration {
-        return eventBus.addListener(eventType, listener)
-    }
-
-    /**
-     * Событие для проброса срабатывающее после нажатие на кнопку регистрации.
-     *
-     * @see registrationButton
-     * @see configureRegistrationButton
-     */
-    class RegistrationButtonClickEvent(source: RegistrationForm) : AbstractEvent<RegistrationForm>(source)
 
 }

@@ -1,10 +1,8 @@
 package net.intervallayers.velogein.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import java.util.*
+import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.ElementCollection
 import javax.persistence.Entity
@@ -13,27 +11,36 @@ import javax.persistence.Enumerated
 import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
-import javax.persistence.ManyToOne
+import javax.persistence.JoinColumn
+import javax.persistence.OneToOne
+import javax.validation.constraints.NotBlank
 
 /**
  * Модель пользователя для обработки аунтефикации и
  * сохранения данных применимых к пользователю, а не к резиденту.
+ *
+ * @author Nourepide@gmail.com
  */
 @Entity
 data class Account(
     @Id
     @GeneratedValue
-    var id: UUID?,
+    var id: UUID? = null,
 
+    @NotBlank
     @Column(unique = true)
     var username: String,
+
+    @NotBlank
     var password: String,
-    var isActive: Boolean,
+
     var firstName: String,
+
     var lastName: String,
 
-    @ManyToOne
-    var domicile: Domicile?,
+    @OneToOne(cascade = [CascadeType.ALL])
+    @JoinColumn(name = "domicile_id", unique = true)
+    var domicile: Domicile? = null,
 
     @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
@@ -43,15 +50,16 @@ data class Account(
     var themeMode: ThemeMode,
 ) {
     companion object {
+        /**
+         * Создаёт пустого пользователя.
+         * Все необязательные поля не заполняются, обязательные поля пустые.
+         */
         fun createEmpty(): Account {
             return Account(
-                id = null,
                 username = "",
                 password = "",
-                isActive = true,
                 firstName = "",
                 lastName = "",
-                domicile = null,
                 roles = mutableSetOf(Role.USER),
                 themeMode = ThemeMode.BRIGHT
             )
@@ -67,12 +75,6 @@ data class Account(
 
         return this
     }
-
-    @get:JsonIgnore
-    val authorities: Collection<GrantedAuthority>
-        get() = roles
-            .map { SimpleGrantedAuthority("ROLE_$it") }
-            .toList()
 
     @Transient
     var passwordDecode: String? = null

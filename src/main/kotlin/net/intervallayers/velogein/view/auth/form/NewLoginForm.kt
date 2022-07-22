@@ -6,8 +6,6 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.button.ButtonVariant
 import com.vaadin.flow.component.icon.VaadinIcon
 import com.vaadin.flow.component.login.LoginForm
-import com.vaadin.flow.component.textfield.PasswordField
-import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.value.ValueChangeMode
 import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.theme.lumo.LumoUtility.*
@@ -15,6 +13,8 @@ import net.intervallayers.velogein.utils.AbstractEvent
 import net.intervallayers.velogein.utils.Gap
 import net.intervallayers.velogein.utils.addEnterKeyListener
 import net.intervallayers.velogein.utils.setRequiredNotEmpty
+import net.intervallayers.velogein.view.component.FlexPasswordField
+import net.intervallayers.velogein.view.component.FlexTextField
 import net.intervallayers.velogein.view.component.FlexVerticalLayout
 
 /**
@@ -38,8 +38,8 @@ class NewLoginForm : FlexVerticalLayout() {
         private const val PASSWORD_FIELD_VALID_SIZE = 1
     }
 
-    private val usernameField = TextField("Имя пользователя")
-    private val passwordField = PasswordField("Пароль")
+    private val usernameField = FlexTextField("Имя пользователя")
+    private val passwordField = FlexPasswordField("Пароль")
     private val loginButton = Button("Войти")
     private val registrationButton = Button("Регистрация")
     private var isIconEnabled = false
@@ -78,7 +78,6 @@ class NewLoginForm : FlexVerticalLayout() {
      */
     private fun configureUsernameField() {
         with(usernameField) {
-            addClassName(Width.FULL)
             addInputListener { loginButtonIsEnabledCheck() }
             addEnterKeyListener { loginButton.clickInClient() }
             setRequiredNotEmpty(USERNAME_FIELD_VALID_SIZE)
@@ -103,7 +102,6 @@ class NewLoginForm : FlexVerticalLayout() {
      */
     private fun configurePasswordField() {
         with(passwordField) {
-            addClassName(Width.FULL)
             addInputListener { loginButtonIsEnabledCheck() }
             addEnterKeyListener { loginButton.clickInClient() }
             setRequiredNotEmpty(PASSWORD_FIELD_VALID_SIZE)

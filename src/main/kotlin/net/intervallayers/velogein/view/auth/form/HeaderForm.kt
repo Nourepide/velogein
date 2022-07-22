@@ -39,13 +39,12 @@ class HeaderForm : FlexVerticalLayout() {
             addClassNames(Margin.NONE, InlineSize.MAX_CONTENT, FontSize.LARGE)
         }
 
-        val limiter = VerticalLayout(h1, Separator(), h2).apply {
+        val container = VerticalLayout(h1, Separator(), h2).apply {
             addClassNames(Width.AUTO, AlignItems.CENTER)
         }
 
-
         addClassNames(Padding.NONE, Width.AUTO, AlignItems.CENTER)
-        add(image, limiter)
+        add(image, container)
 
     }
 

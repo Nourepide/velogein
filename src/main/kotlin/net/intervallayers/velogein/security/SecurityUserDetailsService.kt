@@ -18,7 +18,7 @@ class SecurityUserDetailsService(var accountService: AccountService) : UserDetai
         if (account == null) {
             throw UsernameNotFoundException("Пользователь с именем: $username не найден.")
         } else {
-            return User(account.username, account.password, account.authorities)
+            return User(account.username, account.password, account.roles.map { it.getAuthority() })
         }
     }
 
